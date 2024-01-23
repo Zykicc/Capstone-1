@@ -1,0 +1,49 @@
+{% extends 'base.html' %} {% block content %}
+<div class="column-wrapper">
+  <div class="column1">
+    <form action="/getUserPlaylists" method="POST" class="user1">
+      <div class="user-container">
+        <div class="form__group field">
+          {{ form1.hidden_tag() }} {% for field in form1 if
+          field.widget.input_type != 'hidden' %} {% for error in field.errors %}
+          <span class="text-danger">{{ error }}</span>
+          {% endfor %} {{ field(placeholder=field.label.text,
+          class="form__field") }}
+          <label for="name" class="form__label"
+            >Enter Spotify link for User 1</label
+          >
+
+          {% endfor %}
+        </div>
+        <button class="column1-button">Submit</button>
+      </div>
+    </form>
+    <div class="playlist_list"></div>
+  </div>
+
+  <div class="column2">
+    <button class="compare-button">Compare</button>
+  </div>
+
+  <div class="column3">
+    <form action="/getUserPlaylists" method="POST" class="user2">
+      <div class="user-container">
+        <div class="form__group field">
+          {{ form2.hidden_tag() }} {% for field in form2 if
+          field.widget.input_type != 'hidden' %} {% for error in field.errors %}
+          <span class="text-danger">{{ error }}</span>
+          {% endfor %} {{ field(placeholder=field.label.text,
+          class="form__field") }}
+          <label for="name" class="form__label"
+            >Enter Spotiy link for User 2</label
+          >
+          {% endfor %}
+        </div>
+        <button class="column2-button">Submit</button>
+      </div>
+    </form>
+    <div class="playlist_list"></div>
+  </div>
+</div>
+
+{% endblock %}

@@ -15,34 +15,19 @@
       <nav class="nav">
         <a href="" class="nav_logo">Spotify Twin</a>
 
-        <a href="" class="nav_link">Login</a>
+        {% if not g.user %}
+        <a href="/login" class="nav_link">Login</a>
+        {% else %}
+        <a href="/logout" class="nav_link">Logout</a>
+        {% endif %}
       </nav>
     </header>
-    <!--Home-->
-    <section class="home">
-      <div class="form_container">
-        <!--Login form-->
-        <div class="login_form">
-          <form action="#">
-            <h2>Login</h2>
+    <div class="container">
+      {% for category, message in get_flashed_messages(with_categories=True) %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
 
-            <div class="input_box">
-              {{ form.hidden_tag() }} {% for field in form if
-              field.widget.input_type != 'hidden' %} {% for error in
-              field.errors %}
-              <span class="text-danger">{{ error }}</span>
-              {% endfor %} {{ field(placeholder=field.label.text,
-              class="form-control") }} {% endfor %}
-            </div>
-
-            <button class="button">Login Now</button>
-
-            <div class="login_signup">
-              Dont have an account? <a href="#" id="signup">Signup</a>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
+    {% block content %} {% endblock %}
   </body>
 </html>
