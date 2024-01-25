@@ -18,11 +18,57 @@
         <button class="column1-button">Submit</button>
       </div>
     </form>
-    <div class="playlist_list"></div>
+    <div class="playlist-list">
+      {% for playlist in playListUser1 %}
+      <div
+        class="playlist-box {% if selectedUser1PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
+      >
+        <a
+          class="playlist-wrapper"
+          href="/getPlaylistItems/user1/{{playlist.id}}"
+        >
+          <img src="{{playlist.image}}" alt="" class="playlist-img" />
+          <div class="playlist-item">{{ playlist.name }}</div>
+        </a>
+      </div>
+
+      {% endfor %}
+    </div>
   </div>
 
   <div class="column2">
-    <button class="compare-button">Compare</button>
+    <div class="clearCompareWrapper">
+      {% if playListUser1 or playListUser2 %}
+      <a href="/clearData" class="clear-button greenFillBtn"
+        ><span>Clear</span></a
+      >
+      {% endif %} {% if showCompareBtn %}
+      <a href="/compareUsersPlaylists" class="compare-button greenFillBtn"
+        ><span>Compare</span></a
+      >
+      {% endif %}
+    </div>
+    {% if chemistryData %}
+    <div class="chem-wrapper">
+      <div class="spotifyChemPerc-container">
+        <div class="spotifychemPerc">{{chemistryData.spotifyChemPerc}}</div>
+      </div>
+      <div class="spotifychemPerc-title">Total Spotify Chemistry</div>
+      <div class="divider-line"></div>
+      <div class="morePerc">
+        <div class="chemPerc">
+          {{chemistryData.sameSongCount}} - Common Songs
+        </div>
+        <div class="chemPerc">
+          {{chemistryData.sameArtistCount}} - Common Artists
+        </div>
+        <div class="chemPerc">
+          {{chemistryData.sameAlbumCount}} - Common Albums
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
   </div>
 
   <div class="column3">
@@ -42,7 +88,22 @@
         <button class="column2-button">Submit</button>
       </div>
     </form>
-    <div class="playlist_list"></div>
+    <div class="playlist-list">
+      {% for playlist in playListUser2 %}
+      <div
+        class="playlist-box {% if selectedUser2PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
+      >
+        <a
+          class="playlist-wrapper"
+          href="/getPlaylistItems/user2/{{playlist.id}}"
+        >
+          <img src="{{playlist.image}}" alt="" class="playlist-img" />
+          <div class="playlist-item">{{ playlist.name }}</div>
+        </a>
+      </div>
+
+      {% endfor %}
+    </div>
   </div>
 </div>
 
