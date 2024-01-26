@@ -8,6 +8,7 @@ import requests
 import re
 import pickle
 
+
 # keys
 USER1_PLAYLIST = "user1_playlist"
 USER2_PLAYLIST = "user2_playlist"
@@ -18,9 +19,15 @@ USER2_SONGLIST = "user2_songlist"
 USER1_SELECTED_PLAYLIST_ID = "USER1_SELECTED_PLAYLIST_ID" 
 USER2_SELECTED_PLAYLIST_ID = "USER2_SELECTED_PLAYLIST_ID"
 
+USER1_HAS_EMPTY_PLAYLIST = "USER1_HAS_EMPTY_PLAYLIST"
+USER2_HAS_EMPTY_PLAYLIST = "USER2_HAS_EMPTY_PLAYLIST"
+
 CHEMISTRY_DATA = "CHEMISTRY_DATA"
 
 CURR_USER_KEY = "curr_user"
+
+# glboal vars
+CommonSongData = []
 
 
 app = Flask(__name__)
@@ -166,8 +173,16 @@ def getUserPlaylists():
 
     if 'user1_id' in request.form:
         writeDataToPickle(USER1_PLAYLIST, new_playlist)
+        if len(new_playlist) == 0:
+            session[USER1_HAS_EMPTY_PLAYLIST] = True
+        else:
+            session[USER1_HAS_EMPTY_PLAYLIST] = False
     else:
         writeDataToPickle(USER2_PLAYLIST, new_playlist)
+        if len(new_playlist) == 0:
+            session[USER2_HAS_EMPTY_PLAYLIST] = True
+        else:
+            session[USER2_HAS_EMPTY_PLAYLIST] = False
     
     return redirect('/')
 
@@ -193,13 +208,7 @@ def get1000songs(playlistId, songCount):
 def getPlaylistItems(userId, playlistId):
     """gets all songs in the playlist"""
 
-    # authToken = getToken()
 
-    # url = f"https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset=0&limit=100"
-    # headers = {
-    # 'Authorization': f"Bearer {authToken}"
-    # }
-    # songList = requests.request("GET", url, headers=headers)
     if userId == "user1":
         playListUser = getDataFromPickle(USER1_PLAYLIST)
     else:
@@ -224,8 +233,12 @@ def getPlaylistItems(userId, playlistId):
                 'artists': artistList,
                 'artistIds': artistIdList,
                 'album': item["track"]["album"]["name"],
-                'albumIds': item["track"]["album"]["id"]
+                'albumIds': item["track"]["album"]["id"],
+                'image': item["track"]["album"]["images"],
+                'songUrl': item["track"]["external_urls"]["spotify"]
             })
+            # print("**************************************************")
+            # print(item["track"]["external_urls"]["spotify"])
         else:
             print("**************************************************")
             print(item)
@@ -252,7 +265,7 @@ def comparePlaylists():
     songListUser1 = getDataFromPickle(USER1_SONGLIST)
     songListUser2 = getDataFromPickle(USER2_SONGLIST)
 
-    nameList1 = []
+    songNameList1 = []
     idList1 = []
     artistList1 = []
     albumList1 = []
@@ -271,10 +284,11 @@ def comparePlaylists():
     albumList1 = list(set(albumList1))
         
 
-    nameList2 = []
+    songNameList2 = []
     idList2 = []
     artistList2 = []
     albumList2 = []
+
 
 
     for song in songListUser2:
@@ -289,17 +303,29 @@ def comparePlaylists():
     idList2 = list(set(idList2))
     albumList2 = list(set(albumList2))
 
+
+
+
+    # get the dictionary values (we don't care about the keys now)
+    uniqueSongDataUser1 = list({song['id']:song for song in songListUser1}.values())
+
+
+    # get the dictionary values (we don't care about the keys now)
+    uniqueSongDataUser2 = list({song['id']:song for song in songListUser2}.values())
+
+    songData2Ids = {song2['id'] for song2 in uniqueSongDataUser2}
+
+    # setting data for global var
+    global CommonSongData
+    CommonSongData = [song for song in uniqueSongDataUser1 if song['id'] in songData2Ids]
+
+    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    print(CommonSongData)
+
     sameSongCount = len(list(set(idList1).intersection(idList2)))
     sameArtistCount = len(list(set(artistList1).intersection(artistList2)))
     sameAlbumCount = len(list(set(albumList1).intersection(albumList2)))
-
-    print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-    print(sameSongCount)
-    print(sameArtistCount)
-    print(sameAlbumCount)
     
-    
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
     toalSongs = []
     toalSongs.extend(idList1)
     toalSongs.extend(idList2)
@@ -316,7 +342,7 @@ def comparePlaylists():
     totalAlbumCount = len(list(set(toalAlbums)))
 
     spotifyChemPerc = format((sameSongCount + sameArtistCount + sameAlbumCount) / (totalSongCount + totalArtistCount + totalAlbumCount), ".0%")
-    print(spotifyChemPerc)
+    
     
     chemData = {
         'sameSongCount': sameSongCount,
@@ -344,13 +370,23 @@ def clearData():
     writeDataToPickle(USER1_SONGLIST, [])
     writeDataToPickle(USER2_SONGLIST, [])
 
+    if CHEMISTRY_DATA in session:
+        del session[CHEMISTRY_DATA]
 
     if USER1_SELECTED_PLAYLIST_ID in session:
         del session[USER1_SELECTED_PLAYLIST_ID]
     
     if USER2_SELECTED_PLAYLIST_ID in session:
         del session[USER2_SELECTED_PLAYLIST_ID]
-    
+
+    if USER1_HAS_EMPTY_PLAYLIST in session:
+        session[USER1_HAS_EMPTY_PLAYLIST] = False    
+
+    if USER2_HAS_EMPTY_PLAYLIST in session:
+        session[USER2_HAS_EMPTY_PLAYLIST] = False
+
+    global CommonSongData
+    CommonSongData = []
     return redirect('/')
 
 ##############################TOKEN###################################
@@ -429,11 +465,23 @@ def home_page():
         chemistryData = session[CHEMISTRY_DATA]
     else:
         chemistryData = False
-    
-    # print(filledBothSongList)
+    # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    # print(chemistryData)
+    user1PlaylistIsEmpty = False
+    user2PlaylistIsEmpty = False
 
+    if USER1_HAS_EMPTY_PLAYLIST in session:
+        user1PlaylistIsEmpty = session[USER1_HAS_EMPTY_PLAYLIST]   
+    
+    if USER2_HAS_EMPTY_PLAYLIST in session:
+        user2PlaylistIsEmpty = session[USER2_HAS_EMPTY_PLAYLIST]
+    # print(filledBothSongList)
+        
+    global CommonSongData
+    print(CommonSongData)
     if g.user:
-        return render_template('home.html', form1=form1, form2=form2, playListUser1=playListUser1, playListUser2=playListUser2, showCompareBtn=filledBothSongList, selectedUser1PlaylistId=selectedUser1PlaylistId, selectedUser2PlaylistId=selectedUser2PlaylistId, chemistryData=chemistryData)
+        return render_template('home.html', form1=form1, form2=form2, playListUser1=playListUser1, playListUser2=playListUser2, showCompareBtn=filledBothSongList, selectedUser1PlaylistId=selectedUser1PlaylistId, selectedUser2PlaylistId=selectedUser2PlaylistId, chemistryData=chemistryData, user1PlaylistIsEmpty=user1PlaylistIsEmpty, user2PlaylistIsEmpty=user2PlaylistIsEmpty,
+        CommonSongData=CommonSongData)
   
     else:
         return render_template("home_anon.html")

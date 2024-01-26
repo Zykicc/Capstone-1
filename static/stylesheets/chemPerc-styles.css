@@ -6,22 +6,32 @@
 }
 
 .chem-wrapper {
-  background-color: #9b9b9b;
-  width: 300px;
-  padding: 1rem;
-  border-radius: 1rem;
+  background-color: #000000;
+  width: 90%;
+  padding: 1rem 0 10rem 0;
   align-items: center;
   display: flex;
   flex-direction: column;
   margin-top: 1rem;
+  border-width: thick;
+  border-color: #1ed760;
+  border-style: solid;
 }
 
 .spotifychemPerc {
-  font-size: 50px;
+  color: #1ed760;
+  font-size: 100px;
+}
+
+.spotifychemPerc-title {
+  font-size: 30px;
+  color: aliceblue;
 }
 
 .morePerc {
-  width: 250px;
+  width: 300px;
+  color: aliceblue;
+  font-size: 25px;
 }
 
 .divider-line {
@@ -29,4 +39,53 @@
   height: 2px;
   background-color: #121212;
   margin: 0.5rem;
+}
+
+.chemPercNum {
+  color: #1ed760;
+}
+
+.commonSong-title {
+  font-size: 3em;
+  color: aliceblue;
+  margin-bottom: 1rem;
+}
+
+.commonSongsWrapper {
+  width: -webkit-fill-available;
+  padding: 0 2rem;
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.commonSong-item {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  color: white;
+
+  animation: fadeInAnimation ease 3s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeInAnimation {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.songName-link {
+  color: #1db954;
+  border-bottom: none;
+  transition: 0.3s all ease;
+}
+
+.songName-link:hover {
+  color: #d9d9d9;
+  border-bottom: 1px solid #1db954;
 }

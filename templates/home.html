@@ -19,7 +19,13 @@
       </div>
     </form>
     <div class="playlist-list">
-      {% for playlist in playListUser1 %}
+      {% if playListUser1|length > 0 %}
+      <h2 class="selectPlaylist">Select a Playlist</h2>
+      {% endif %} {% for playlist in playListUser1 %} {% if user1PlaylistIsEmpty
+      %}
+      <div class="playlist-error">No public playlists found</div>
+      <p class="playlist-error">Make sure user playlists are public</p>
+      {% endif %}
       <div
         class="playlist-box {% if selectedUser1PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
       >
@@ -28,7 +34,10 @@
           href="/getPlaylistItems/user1/{{playlist.id}}"
         >
           <img src="{{playlist.image}}" alt="" class="playlist-img" />
-          <div class="playlist-item">{{ playlist.name }}</div>
+          <div class="playlistItem-wrapper">
+            <div class="playlist-item">{{ playlist.name }}</div>
+            <div class="playlist-songs">({{ playlist.songCount }} songs)</div>
+          </div>
         </a>
       </div>
 
@@ -56,15 +65,42 @@
       <div class="spotifychemPerc-title">Total Spotify Chemistry</div>
       <div class="divider-line"></div>
       <div class="morePerc">
+        <div class="chemPerc">More info:</div>
         <div class="chemPerc">
-          {{chemistryData.sameSongCount}} - Common Songs
+          <span class="chemPercNum">{{chemistryData.sameSongCount}}</span>
+          Shared Songs
         </div>
         <div class="chemPerc">
-          {{chemistryData.sameArtistCount}} - Common Artists
+          <span class="chemPercNum">{{chemistryData.sameArtistCount}}</span>
+          Shared Artists
         </div>
         <div class="chemPerc">
-          {{chemistryData.sameAlbumCount}} - Common Albums
+          <span class="chemPercNum">{{chemistryData.sameAlbumCount}}</span>
+          Shared Albums
         </div>
+      </div>
+      <div class="divider-line"></div>
+      <div class="commonSong-title">Common Songs</div>
+      <div class="commonSongsWrapper">
+        {% for data in CommonSongData %}
+        <div class="commonSong-item">
+          <img
+            class="commonSong-image"
+            src="{{data.image[0].url}}"
+            alt=""
+            style="height: 50px; width: 50px"
+          />
+          <div class="name-artist-wrapper">
+            <a class="songName-link" href="{{data.songUrl}}" target="_blank"
+              >{{data.name}}</a
+            >
+            <div style="color: grey">
+              {% for artist in data.artists %}{{artist}}{% if loop.index !=
+              data.artists|length %},{% endif %} {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
       </div>
     </div>
 
@@ -89,7 +125,12 @@
       </div>
     </form>
     <div class="playlist-list">
-      {% for playlist in playListUser2 %}
+      {% if playListUser2|length > 0 %}
+      <h2 class="selectPlaylist">Select a Playlist</h2>
+      {% endif %} {% if user2PlaylistIsEmpty %}
+      <div class="playlist-error">No public playlists found</div>
+      <p class="playlist-error">Make sure user playlists are public</p>
+      {% endif %} {% for playlist in playListUser2 %}
       <div
         class="playlist-box {% if selectedUser2PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
       >
@@ -98,7 +139,10 @@
           href="/getPlaylistItems/user2/{{playlist.id}}"
         >
           <img src="{{playlist.image}}" alt="" class="playlist-img" />
-          <div class="playlist-item">{{ playlist.name }}</div>
+          <div class="playlistItem-wrapper">
+            <div class="playlist-item">{{ playlist.name }}</div>
+            <div class="playlist-songs">({{ playlist.songCount }} songs)</div>
+          </div>
         </a>
       </div>
 

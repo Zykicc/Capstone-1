@@ -421,6 +421,7 @@ input:-webkit-autofill:active {
 }
 
 .playlist-img {
+  object-fit: cover;
   height: 70px;
   width: 70px;
   border-radius: 0.5rem 0 0 0.5rem;
@@ -436,4 +437,25 @@ input:-webkit-autofill:active {
 
 .selectedPlaylist {
   background-color: #4a4a4b;
+  border-width: 2px;
+  border-color: #e0e0e0;
+  border-style: solid;
+}
+
+.playlistItem-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.playlist-songs {
+  font-size: 12px;
+}
+
+.playlist-error {
+  color: #bb3e3e;
+}
+
+.selectPlaylist {
+  color: #1ed760;
 }
