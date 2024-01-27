@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script
+      type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"
+    ></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spotfiy Twin</title>
@@ -11,6 +15,7 @@
       rel="stylesheet"
       href="https://unicons.iconscout.com/release/v4.0.0/css/line.css"
     />
+    <script src="/static/app.js"></script>
   </head>
   <body>
     <header>
@@ -24,9 +29,9 @@
         {% endif %}
       </nav>
     </header>
-    <div class="container">
+    <div class="error-container">
       {% for category, message in get_flashed_messages(with_categories=True) %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
+      <div class="error-message">{{ message }}</div>
       {% endfor %}
     </div>
 

@@ -4,9 +4,10 @@ from werkzeug.exceptions import Unauthorized
 from sqlalchemy.exc import IntegrityError
 from models import connect_db, db, User
 from forms import LoginForm, SignUpForm, GetUser1, GetUser2
+from appFunctions import *
 import requests
 import re
-import pickle
+
 
 
 # keys
@@ -77,7 +78,7 @@ def do_logout():
 
 @app.route("/register", methods=["GET", "POST"])
 def signup():
-  """register page"""
+  """register page and handles form submission"""
 
 
   form = SignUpForm()
@@ -106,7 +107,7 @@ def signup():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-  """Login page"""
+  """Login page and handles form submission"""
 
   form = LoginForm()
 
@@ -140,119 +141,113 @@ def logout():
 
 @app.route('/getUserPlaylists', methods=["GET", "POST"])
 def getUserPlaylists():
-    """Gets all user playlists"""
+    """Gets all user playlists and saves data to pickle file"""
+    try:
 
-    # print("#################################################")
-
-    if 'user1_id' in request.form:
-        user_id = request.form['user1_id']
-    else:
-        user_id = request.form['user2_id']
-
-    # user_id = request.form['user1_id'];
-
-    authToken = getToken()
-
-    userId = re.search(r'(?<=open\.spotify\.com/user/)(.*)(?=\?si=)', user_id).group()
-
-    url = f"https://api.spotify.com/v1/users/{userId}/playlists"
-    headers = {
-    'Authorization': f"Bearer {authToken}"
-    }
-    playlist = requests.request("GET", url, headers=headers)
-    print("#################################################")
-
-    new_playlist = []
-    for item in playlist.json()["items"]:
-        new_playlist.append({ 
-            'name': item["name"], 
-            'id': item["id"],
-            'image': item["images"][0]["url"],
-            'songCount': item["tracks"]["total"]
-        })
-
-    if 'user1_id' in request.form:
-        writeDataToPickle(USER1_PLAYLIST, new_playlist)
-        if len(new_playlist) == 0:
-            session[USER1_HAS_EMPTY_PLAYLIST] = True
+        if 'user1_id' in request.form:
+            user_id = request.form['user1_id']
         else:
-            session[USER1_HAS_EMPTY_PLAYLIST] = False
-    else:
-        writeDataToPickle(USER2_PLAYLIST, new_playlist)
-        if len(new_playlist) == 0:
-            session[USER2_HAS_EMPTY_PLAYLIST] = True
-        else:
-            session[USER2_HAS_EMPTY_PLAYLIST] = False
-    
-    return redirect('/')
+            user_id = request.form['user2_id']
 
-################################################################################
+        authToken = getToken()
 
-def get1000songs(playlistId, songCount):
-    authToken = getToken()
+        userId = re.search(r'(?<=open\.spotify\.com/user/)(.*)(?=\?si=)', user_id).group()
 
-    collectedSongs = []
-    offsets = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]
-    for offset in offsets:
-        url = f"https://api.spotify.com/v1/playlists/{playlistId}/tracks?offset={offset}&limit=100"
+        url = f"https://api.spotify.com/v1/users/{userId}/playlists"
         headers = {
         'Authorization': f"Bearer {authToken}"
         }
-        songList = requests.request("GET", url, headers=headers)
-        collectedSongs.extend(songList.json()["items"])
-        if len(collectedSongs) >= songCount:
-            break;
-    return collectedSongs
+        playlist = requests.request("GET", url, headers=headers)
+        print("#################################################")
+
+        new_playlist = []
+        for item in playlist.json()["items"]:
+            new_playlist.append({ 
+                'name': item["name"], 
+                'id': item["id"],
+                'image': item["images"][0]["url"],
+                'songCount': item["tracks"]["total"]
+            })
+
+        if 'user1_id' in request.form:
+            writeDataToPickle(USER1_PLAYLIST, new_playlist)
+            if len(new_playlist) == 0:
+                session[USER1_HAS_EMPTY_PLAYLIST] = True
+            else:
+                session[USER1_HAS_EMPTY_PLAYLIST] = False
+        else:
+            writeDataToPickle(USER2_PLAYLIST, new_playlist)
+            if len(new_playlist) == 0:
+                session[USER2_HAS_EMPTY_PLAYLIST] = True
+            else:
+                session[USER2_HAS_EMPTY_PLAYLIST] = False
+
+    except Exception as e:
+        print(e)
+        flash("Invalid Spotify link", 'danger')
+        
+    
+    return redirect('/')
+
+##############################################################################
 
 @app.route("/getPlaylistItems/<string:userId>/<string:playlistId>", methods=["GET"])
 def getPlaylistItems(userId, playlistId):
-    """gets all songs in the playlist"""
+    """gets all songs in the playlist, and gets the first 1000 songs in the playlist with offset function. All data is saved in pickle file"""
 
-
-    if userId == "user1":
-        playListUser = getDataFromPickle(USER1_PLAYLIST)
-    else:
-        playListUser = getDataFromPickle(USER2_PLAYLIST)
-    selectedPlayList = [playlist for playlist in playListUser if playlist["id"] == playlistId]
-    selectedPlayList = selectedPlayList[0]
-
-    songList = get1000songs(playlistId, selectedPlayList["songCount"])
-
+    selectedPlayList = ''
     new_songList = []
-    for item in songList:
-        if(item["track"] is not None):
-            artistList = []
-            artistIdList = []
-            for artist in item["track"]["artists"]:
-                artistIdList.append(artist["id"])
-                artistList.append(artist["name"])
-
-            new_songList.append({ 
-                'name': item["track"]["name"], 
-                'id': item["track"]["id"],
-                'artists': artistList,
-                'artistIds': artistIdList,
-                'album': item["track"]["album"]["name"],
-                'albumIds': item["track"]["album"]["id"],
-                'image': item["track"]["album"]["images"],
-                'songUrl': item["track"]["external_urls"]["spotify"]
-            })
-            # print("**************************************************")
-            # print(item["track"]["external_urls"]["spotify"])
+    try:
+        if userId == "user1":
+            playListUser = getDataFromPickle(USER1_PLAYLIST)
         else:
-            print("**************************************************")
-            print(item)
+            playListUser = getDataFromPickle(USER2_PLAYLIST)
+        selectedPlayList = [playlist for playlist in playListUser if playlist["id"] == playlistId]
+        selectedPlayList = selectedPlayList[0]
 
+        songList = get1000songs(playlistId, selectedPlayList["songCount"])
+
+        
+        for item in songList:
+            if(item["track"] is not None):
+                artistList = []
+                artistIdList = []
+                for artist in item["track"]["artists"]:
+                    artistIdList.append(artist["id"])
+                    artistList.append(artist["name"])
+                
+                songUrl = ''
+                if(item["track"]["external_urls"].get('spotify') != None):
+                    songUrl = item["track"]["external_urls"]["spotify"]
+                
+                new_songList.append({ 
+                    'name': item["track"]["name"], 
+                    'id': item["track"]["id"],
+                    'artists': artistList,
+                    'artistIds': artistIdList,
+                    'album': item["track"]["album"]["name"],
+                    'albumIds': item["track"]["album"]["id"],
+                    'image': item["track"]["album"]["images"],
+                    'songUrl': songUrl
+                })
+            else:
+                print("**************************************************")
+                print(item)
+
+        
+        
     
+    except Exception as e:
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+        print(e)
+        flash("Error: Could not retreive songs", 'danger')
+
     if userId == "user1":
         writeDataToPickle(USER1_SONGLIST, new_songList)
         session[USER1_SELECTED_PLAYLIST_ID] = playlistId
     else:
         writeDataToPickle(USER2_SONGLIST, new_songList)
         session[USER2_SELECTED_PLAYLIST_ID] = playlistId
-    
-
-
 
     return redirect("/")
 
@@ -265,46 +260,18 @@ def comparePlaylists():
     songListUser1 = getDataFromPickle(USER1_SONGLIST)
     songListUser2 = getDataFromPickle(USER2_SONGLIST)
 
-    songNameList1 = []
-    idList1 = []
-    artistList1 = []
-    albumList1 = []
+    songListdata1 = getSongData(songListUser1)
 
-
-    for song in songListUser1:
-        # nameList1.append(song["name"])
-        idList1.append(song["id"])
-        albumList1.append(song["albumIds"])
-
-        for artist in song["artistIds"]:
-            artistList1.append(artist)
-
-    artistList1 = list(set(artistList1))  
-    idList1 = list(set(idList1))
-    albumList1 = list(set(albumList1))
+    artistList1 = list(set(songListdata1['artistList']))  
+    idList1 = list(set(songListdata1['idList']))
+    albumList1 = list(set(songListdata1['albumList']))
         
 
-    songNameList2 = []
-    idList2 = []
-    artistList2 = []
-    albumList2 = []
+    songListdata2 = getSongData(songListUser2)
 
-
-
-    for song in songListUser2:
-        # nameList2.append(song["name"])
-        idList2.append(song["id"])
-        albumList2.append(song["albumIds"])
-
-        for artist in song["artistIds"]:
-            artistList2.append(artist)
-
-    artistList2 = list(set(artistList2))  
-    idList2 = list(set(idList2))
-    albumList2 = list(set(albumList2))
-
-
-
+    artistList2 = list(set(songListdata2['artistList']))  
+    idList2 = list(set(songListdata2['idList']))
+    albumList2 = list(set(songListdata2['albumList']))
 
     # get the dictionary values (we don't care about the keys now)
     uniqueSongDataUser1 = list({song['id']:song for song in songListUser1}.values())
@@ -318,9 +285,6 @@ def comparePlaylists():
     # setting data for global var
     global CommonSongData
     CommonSongData = [song for song in uniqueSongDataUser1 if song['id'] in songData2Ids]
-
-    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    print(CommonSongData)
 
     sameSongCount = len(list(set(idList1).intersection(idList2)))
     sameArtistCount = len(list(set(artistList1).intersection(artistList2)))
@@ -343,7 +307,6 @@ def comparePlaylists():
 
     spotifyChemPerc = format((sameSongCount + sameArtistCount + sameAlbumCount) / (totalSongCount + totalArtistCount + totalAlbumCount), ".0%")
     
-    
     chemData = {
         'sameSongCount': sameSongCount,
         'sameArtistCount': sameArtistCount,
@@ -356,14 +319,10 @@ def comparePlaylists():
     return redirect("/")
 
 
-
-
-
-
 ########################################################################
 @app.route('/clearData', methods=["GET"])
 def clearData():
-    """Handle logout of user."""
+    """Handles clearing all saved data"""
     writeDataToPickle(USER1_PLAYLIST, [])
     writeDataToPickle(USER2_PLAYLIST, [])
 
@@ -389,46 +348,10 @@ def clearData():
     CommonSongData = []
     return redirect('/')
 
-##############################TOKEN###################################
-def getToken():
-    url = "https://accounts.spotify.com/api/token"
-
-    payload = 'grant_type=client_credentials&client_id=32dcf2a655a84387beb033858c58c4fa&client_secret=8c2e1661ebbf48d4978fed7bc585ee23'
-    headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Cookie': '__Host-device_id=AQD0pt6oHOfQGGyBUbX5sfdR9EX3CCEKg9DhURAZOYdWezEn68ssw0XnELO0LI7HcGIZBOpZMhcSjnbAkUcJyLtWNpm5PJackds'
-    }
-
-    response = requests.request("POST", url, headers=headers, data=payload)
-
-    return response.json().get("access_token")
-
-######################################################################
-
-def writeDataToPickle(fileName, data):
-    if len(data) == 0:
-        open(f'{fileName}.pickle', "w").close()
-    else:
-        with open(f'{fileName}.pickle', "wb") as file:
-                pickle.dump(data, file)
-
-def getDataFromPickle(fileName):
-    data = []
-    try:
-        with (open(f'{fileName}.pickle', "rb")) as openfile:
-            while True:
-                try:
-                    data = pickle.load(openfile)
-                except EOFError:
-                    break
-    except FileNotFoundError:
-        return []
-    return data
-
 ##################################################################
 @app.route("/", methods=["GET", "POST"])
 def home_page():
-    """home page"""
+    """home page, also all data is sent to this route"""
     
     form1 = GetUser1()
     form2 = GetUser2()
@@ -442,40 +365,21 @@ def home_page():
     songListUser1 = getDataFromPickle(USER1_SONGLIST)
     songListUser2 = getDataFromPickle(USER2_SONGLIST)
 
-    # print(songListUser1)
-    # print(songListUser2)
 
     if len(songListUser1) != 0 and len(songListUser2) != 0:
         filledBothSongList = True
     else:
         filledBothSongList = False
 
-    selectedUser1PlaylistId = ""
-    selectedUser2PlaylistId = ""
+    selectedUser1PlaylistId = getSelectedUserPlaylistDataFromSession(USER1_SELECTED_PLAYLIST_ID)
+    selectedUser2PlaylistId = getSelectedUserPlaylistDataFromSession(USER2_SELECTED_PLAYLIST_ID)
 
-    if USER1_SELECTED_PLAYLIST_ID in session:
-        selectedUser1PlaylistId = session[USER1_SELECTED_PLAYLIST_ID]
     
-    if USER2_SELECTED_PLAYLIST_ID in session:
-        selectedUser2PlaylistId = session[USER2_SELECTED_PLAYLIST_ID]
-    
+    chemistryData = getChemistryData(CHEMISTRY_DATA)
 
-    chemistryData = {}
-    if CHEMISTRY_DATA in session:
-        chemistryData = session[CHEMISTRY_DATA]
-    else:
-        chemistryData = False
-    # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    # print(chemistryData)
-    user1PlaylistIsEmpty = False
-    user2PlaylistIsEmpty = False
+    user1PlaylistIsEmpty = checkIfUserPlaylistIsEmpty(USER1_HAS_EMPTY_PLAYLIST)
+    user2PlaylistIsEmpty = checkIfUserPlaylistIsEmpty(USER2_HAS_EMPTY_PLAYLIST)
 
-    if USER1_HAS_EMPTY_PLAYLIST in session:
-        user1PlaylistIsEmpty = session[USER1_HAS_EMPTY_PLAYLIST]   
-    
-    if USER2_HAS_EMPTY_PLAYLIST in session:
-        user2PlaylistIsEmpty = session[USER2_HAS_EMPTY_PLAYLIST]
-    # print(filledBothSongList)
         
     global CommonSongData
     print(CommonSongData)

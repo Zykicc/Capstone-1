@@ -1,4 +1,23 @@
 {% extends 'base.html' %} {% block content %}
+<div id="loading-overlay">
+  <div
+    style="
+      width: 200px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <span class="loader"></span>
+  </div>
+  <h2 class="loadingMsg" id="loadingMsg0">Retreiving all Songs...</h2>
+  <h2 class="loadingMsg" id="loadingMsg1">Do you have slow internet?</h2>
+  <h2 class="loadingMsg" id="loadingMsg2">Ok this is way to many songs!</h2>
+  <h2 class="loadingMsg" id="loadingMsg3">
+    Someone has way to much free time!
+  </h2>
+</div>
 <div class="column-wrapper">
   <div class="column1">
     <form action="/getUserPlaylists" method="POST" class="user1">
@@ -15,7 +34,7 @@
 
           {% endfor %}
         </div>
-        <button class="column1-button">Submit</button>
+        <button id="column1-button" class="column1-button">Submit</button>
       </div>
     </form>
     <div class="playlist-list">
@@ -28,6 +47,7 @@
       {% endif %}
       <div
         class="playlist-box {% if selectedUser1PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
+        onclick="showLoading()"
       >
         <a
           class="playlist-wrapper"
@@ -121,7 +141,7 @@
           >
           {% endfor %}
         </div>
-        <button class="column2-button">Submit</button>
+        <button id="column2-button" class="column2-button">Submit</button>
       </div>
     </form>
     <div class="playlist-list">
@@ -133,6 +153,7 @@
       {% endif %} {% for playlist in playListUser2 %}
       <div
         class="playlist-box {% if selectedUser2PlaylistId == playlist.id %} selectedPlaylist {% endif %}"
+        onclick="showLoading()"
       >
         <a
           class="playlist-wrapper"
